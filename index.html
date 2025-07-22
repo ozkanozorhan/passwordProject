@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Şifre Oluşturucu</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-5">
+    <div class="max-w-md mx-auto bg-white p-8 rounded-lg shadow-md">
+        <h1 class="text-2xl font-semibold text-gray-800 text-center mb-8">Şifre Oluşturucu</h1>
+        
+        <div class="mb-6">
+            <label for="length" class="block text-gray-700 font-medium mb-2">Şifre Uzunluğu:</label>
+            <input type="number" id="length" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:border-blue-500" min="4" max="128" value="12">
+        </div>
+
+        <div class="mb-6">
+            <label class="block text-gray-700 font-medium mb-2">Karakter Tipleri:</label>
+            <div class="space-y-3">
+                <div class="flex items-center">
+                    <input type="checkbox" id="uppercase" class="mr-3 w-4 h-4" checked>
+                    <label for="uppercase" class="text-gray-700 cursor-pointer">Büyük Harf (A-Z)</label>
+                </div>
+                <div class="flex items-center">
+                    <input type="checkbox" id="lowercase" class="mr-3 w-4 h-4" checked>
+                    <label for="lowercase" class="text-gray-700 cursor-pointer">Küçük Harf (a-z)</label>
+                </div>
+                <div class="flex items-center">
+                    <input type="checkbox" id="numbers" class="mr-3 w-4 h-4" checked>
+                    <label for="numbers" class="text-gray-700 cursor-pointer">Rakam (0-9)</label>
+                </div>
+                <div class="flex items-center">
+                    <input type="checkbox" id="symbols" class="mr-3 w-4 h-4" checked>
+                    <label for="symbols" class="text-gray-700 cursor-pointer">Sembol (!@#$%...)</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex gap-3 mb-6">
+            <button id="generateBtn" class="flex-1 bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600">Şifre Oluştur</button>
+            <button id="copyBtn" class="flex-1 bg-gray-500 text-white py-2 px-4 rounded-md hover:bg-gray-600 disabled:bg-gray-300 disabled:cursor-not-allowed" disabled>Kopyala</button>
+        </div>
+
+        <div id="passwordOutput" class="bg-gray-50 border border-gray-300 p-4 rounded-md font-mono text-gray-800 min-h-12 break-all">
+            Şifre burada görünecek...
+        </div>
+        
+        <div id="errorMessage" class="hidden mt-3 bg-red-100 border border-red-300 text-red-700 px-3 py-2 rounded-md"></div>
+        <div id="successMessage" class="hidden mt-3 bg-green-100 border border-green-300 text-green-700 px-3 py-2 rounded-md"></div>
+    </div>
+
+    <script>
+        const lengthInput = document.getElementById('length');
+        const uppercaseCheckbox = document.getElementById('uppercase');
+        const lowercaseCheckbox = document.getElementById('lowercase');
+        const numbersCheckbox = document.getElementById('numbers');
+        const symbolsCheckbox = document.getElementById('symbols');
+        const generateBtn = document.getElementById('generateBtn');
+        const copyBtn = document.getElementById('copyBtn');
+        const passwordOutput = document.getElementById('passwordOutput');
+        const errorMessage = document.getElementById('errorMessage');
+        const successMessage = document.getElementById('successMessage');
+
+        const characterSets = {
+            uppercase: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+            lowercase: 'abcdefghijklmnopqrstuvwxyz',
+            numbers: '0123456789',
+            symbols: '!@#$%^&*()_+-=[]{}|;:,.<>?'
+        };
+
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.classList.remove('hidden');
+            successMessage.classList.add('hidden');
+        }
+
+        function showSuccess(message) {
+            successMessage.textContent = message;
+            successMessage.classList.remove('hidden');
+            errorMessage.classList.add('hidden');
+        }
+
+        function generatePassword() {
+            const length = parseInt(lengthInput.value);
+            
+            if (!length || length < 4) {
+                showError('Şifre uzunluğu en az 4 karakter olmalıdır!');
+                return;
+            }
+            
+            if (length > 128) {
+                showError('Şifre uzunluğu en fazla 128 karakter olabilir!');
+                return;
+            }
+
+            const selectedTypes = {
+                uppercase: uppercaseCheckbox.checked,
+                lowercase: lowercaseCheckbox.checked,
+                numbers: numbersCheckbox.checked,
+                symbols: symbolsCheckbox.checked
+            };
+
+            const hasSelection = Object.values(selectedTypes).some(selected => selected);
+            if (!hasSelection) {
+                showError('En az bir karakter tipi seçmelisiniz!');
+                return;
+            }
+
+            let characterPool = '';
+            const guaranteedChars = [];
+            
+            for (const [type, isSelected] of Object.entries(selectedTypes)) {
+                if (isSelected) {
+                    characterPool += characterSets[type];
+                    const randomChar = characterSets[type][Math.floor(Math.random() * characterSets[type].length)];
+                    guaranteedChars.push(randomChar);
+                }
+            }
+
+            let password = '';
+            password += guaranteedChars.join('');
+            
+            for (let i = guaranteedChars.length; i < length; i++) {
+                const randomIndex = Math.floor(Math.random() * characterPool.length);
+                password += characterPool[randomIndex];
+            }
+
+            const passwordArray = password.split('');
+            for (let i = passwordArray.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [passwordArray[i], passwordArray[j]] = [passwordArray[j], passwordArray[i]];
+            }
+            password = passwordArray.join('');
+
+            passwordOutput.textContent = password;
+            copyBtn.disabled = false;
+            showSuccess('Şifre başarıyla oluşturuldu!');
+        }
+
+        async function copyPassword() {
+            const password = passwordOutput.textContent;
+            
+            if (!password || password === 'Şifre burada görünecek...') {
+                showError('Kopyalanacak şifre bulunmuyor!');
+                return;
+            }
+
+            try {
+                await navigator.clipboard.writeText(password);
+                showSuccess('Şifre panoya kopyalandı!');
+            } catch (error) {
+                const textArea = document.createElement('textarea');
+                textArea.value = password;
+                textArea.style.position = 'fixed';
+                textArea.style.opacity = '0';
+                document.body.appendChild(textArea);
+                textArea.select();
+                
+                try {
+                    document.execCommand('copy');
+                    showSuccess('Şifre panoya kopyalandı!');
+                } catch (fallbackError) {
+                    showError('Kopyalama işlemi başarısız oldu.');
+                }
+                
+                document.body.removeChild(textArea);
+            }
+        }
+
+        generateBtn.addEventListener('click', generatePassword);
+        copyBtn.addEventListener('click', copyPassword);
+
+        lengthInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                generatePassword();
+            }
+        });
+
+        const checkboxes = [uppercaseCheckbox, lowercaseCheckbox, numbersCheckbox, symbolsCheckbox];
+        checkboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', () => {
+                const anyChecked = checkboxes.some(cb => cb.checked);
+                if (!anyChecked) {
+                    checkbox.checked = true;
+                    showError('En az bir karakter tipi seçili kalmalıdır!');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
